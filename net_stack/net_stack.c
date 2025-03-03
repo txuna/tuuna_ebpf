@@ -43,9 +43,9 @@ int trigger(struct __sk_buff *ctx){
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u32 stack_id = bpf_get_stackid(ctx, &stacks, 0);
 
-    if (pid != 20085){
-        return NET_RX_SUCCESS;
-    }
+    // if (pid != 20085){
+    //     return NET_RX_SUCCESS;
+    // }
 
     struct event *info;
     info = bpf_ringbuf_reserve(&events, sizeof(struct event), 0);
