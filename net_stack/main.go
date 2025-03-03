@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,6 +20,7 @@ import (
 )
 
 type Ksym struct {
+	Num     uint64
 	Addr    string
 	SymName string
 	ModName string
@@ -29,6 +30,13 @@ type Handler struct {
 	Ksyms []*Ksym
 	Path  string
 }
+
+type K []*Ksym
+
+// Sort Interface를 충족시키기 위한 Len(), Swap(int, int), Less(int, int)다.
+func (a K) Len() int           { return len(a) }
+func (a K) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a K) Less(i, j int) bool { return a[i].Num < a[j].Num }
 
 func (h *Handler) Refresh() {
 	file, err := os.Open(h.Path)
@@ -55,28 +63,34 @@ func (h *Handler) Refresh() {
 			continue
 		}
 
-		if len(parts) == 4 {
-			modName = parts[3]
+		if parts[2] == "$x" {
 			continue
 		}
 
+		if len(parts) == 4 {
+			modName = parts[3]
+		}
+
+		n, _ := strconv.ParseUint(parts[0], 16, 64)
 		h.Ksyms = append(h.Ksyms, &Ksym{
+			Num:     n,
 			Addr:    parts[0],
 			SymName: parts[2],
 			ModName: modName,
 		})
 	}
 
+	sort.Sort(K(h.Ksyms))
 }
 
 func (h *Handler) Find(addr uint64) *Ksym {
-	for _, sym := range slices.Backward(h.Ksyms) {
+	for _, sym := range h.Ksyms {
 		n, err := strconv.ParseUint(sym.Addr, 16, 64)
 		if err != nil {
-			fmt.Println("Error2: ", err)
+			fmt.Println("Error: ", err)
 			return nil
 		}
-		if addr >= n {
+		if addr <= n {
 			return sym
 		}
 
@@ -118,7 +132,6 @@ func main() {
 	}
 
 	h.Refresh()
-
 	rd, err := ringbuf.NewReader(objs.Events)
 	if err != nil {
 		log.Fatalf("opening ringbuf reader: %s", err)
@@ -174,7 +187,7 @@ func main() {
 			if sym == nil {
 				continue
 			}
-			log.Printf("IP: %x - %s\n", ip, sym.SymName)
+			log.Printf("IP: %x - %s[%s]\n", ip, sym.SymName, sym.ModName)
 		}
 
 	}
