@@ -73,6 +73,7 @@ func main() {
 func readLoop(rd *ringbuf.Reader) {
 	var event bpfEvent
 	log.Println("sip sport dip dport srtt")
+
 	for {
 		record, err := rd.Read()
 		if err != nil {
@@ -102,12 +103,23 @@ func readLoop(rd *ringbuf.Reader) {
 				event.Dport,
 				event.Srtt,
 			)
+
 		case RTO:
-			log.Println("TRIGGER RTO")
+			log.Printf("[TRIGGER RTO]%-15s %-6d -> %-15s %-6d",
+				intToIP(event.Saddr),
+				event.Sport,
+				intToIP(event.Daddr),
+				event.Dport,
+			)
 			break
 
 		case RETRANS:
-			log.Println("TRIGGER RETRANS")
+			log.Printf("[TRIGGER RETRANS]%-15s %-6d -> %-15s %-6d",
+				intToIP(event.Saddr),
+				event.Sport,
+				intToIP(event.Daddr),
+				event.Dport,
+			)
 			break
 
 		}

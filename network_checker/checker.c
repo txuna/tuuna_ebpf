@@ -274,6 +274,10 @@ int on_bpf_sockops(struct bpf_sock_ops *skops) {
         case BPF_SOCK_OPS_STATE_CB:
             bpf_sock_ops_state_cb(skops);
             break;
+
+        // syn 패킷을 보냈을 떄
+        case BPF_SOCK_OPS_TCP_CONNECT_CB:
+            break;
     }
            
     return 0;
