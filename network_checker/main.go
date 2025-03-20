@@ -92,6 +92,9 @@ func readLoop(rd *ringbuf.Reader) {
 
 		switch event.Type {
 		case RTT:
+			if event.Srtt <= 0 {
+				continue
+			}
 			log.Printf("%-15s %-6d -> %-15s %-6d %-6d",
 				intToIP(event.Saddr),
 				event.Sport,
